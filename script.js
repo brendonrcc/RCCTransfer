@@ -1,4 +1,4 @@
-  document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT E WORKER
@@ -1577,6 +1577,10 @@
                     try {
                         await fetch(MACRO_URL, {
                             method: 'POST',
+                            mode: 'no-cors',
+                            headers: {
+                                'Content-Type': 'text/plain;charset=utf-8'
+                            },
                             body: JSON.stringify({
                                 action: 'updateStatus',
                                 codigo: codigoEnvio,
@@ -1673,6 +1677,10 @@
                     try {
                         await fetch(MACRO_URL, {
                             method: 'POST',
+                            mode: 'no-cors',
+                            headers: {
+                                'Content-Type': 'text/plain;charset=utf-8'
+                            },
                             body: JSON.stringify(requestPayload)
                         });
                     } catch (error) {
