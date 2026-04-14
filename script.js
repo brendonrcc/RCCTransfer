@@ -1,12 +1,11 @@
-  document.addEventListener('DOMContentLoaded', function() {
+   document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT (MACRO)
             // ==========================================
             const MACRO_URL = "https://script.google.com/macros/s/AKfycbwkiVTR4HUA-w2TdNHP67yrQXVQy8LE17PufLYlsChcVdfyo7OgmAzA_hxH3P9cYvWv_w/exec"; 
             
-            // COLE AQUI A URL GERADA NA PARTE 1 DESSE PROMPT!
-            const MACRO_GRUPOS_URL = "https://script.google.com/macros/s/AKfycbxUZuOWPi2VFRP0fSrlIJuLOcF4XlSTs9V7d8YuPzqqNz95S98VlnKFFoSyxb-y0ZXxTw/exec"; 
+            const MACRO_GRUPOS_URL = "https://script.google.com/macros/s/AKfycbz63ZsYAPRO2JAYhmJOyUKqZVW1y0h-jBl4bs1xQMlkc42M74HyD6LVIstHbKpHnB10Ow/exec"; 
             
             let LOGGED_IN_USER = "Visitante"; 
             const ITEMS_PER_PAGE = 6; 
@@ -288,9 +287,9 @@
                     const response = await fetch(MACRO_GRUPOS_URL);
                     const json = await response.json();
                     
-                    if (json.status === "success") {
-                        companhiasData = json.data.companhias;
-                        subcompanhiasData = json.data.subcompanhias;
+                    if (json.status === "success" && json.data) {
+                        companhiasData = Array.isArray(json.data.companhias) ? json.data.companhias : [];
+                        subcompanhiasData = Array.isArray(json.data.subcompanhias) ? json.data.subcompanhias : [];
                     }
                 } catch (error) {
                     console.error("Erro ao carregar dados das companhias:", error);
@@ -709,7 +708,7 @@
             });
 
             function getFilteredAllTransfers() {
-                if (!allTransfersDataArr) return [];
+                if (!Array.isArray(allTransfersDataArr)) return [];
                 return allTransfersDataArr.filter(req => {
                     if (!allSearchQuery) return true;
                     return (req.codigo && req.codigo.toLowerCase().includes(allSearchQuery)) ||
@@ -721,7 +720,7 @@
             }
 
             function updatePendingCount() {
-                const total = requestsDataArr.length;
+                const total = Array.isArray(requestsDataArr) ? requestsDataArr.length : 0;
                 const formattedTotal = String(total).padStart(2, '0');
                 pendingCount.textContent = formattedTotal;
                 navPendingBadge.textContent = total;
@@ -731,7 +730,7 @@
             function renderRequestsGrid() {
                 requestsQueue.innerHTML = '';
                 
-                if (requestsDataArr.length === 0) {
+                if (!Array.isArray(requestsDataArr) || requestsDataArr.length === 0) {
                     requestsPagination.classList.add('hidden');
                     requestsQueue.innerHTML = `
                         <div class="col-span-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -793,7 +792,7 @@
             function renderHistoryGrid() {
                 historyGrid.innerHTML = '';
 
-                if (historyDataArr.length === 0) {
+                if (!Array.isArray(historyDataArr) || historyDataArr.length === 0) {
                     historyPagination.classList.add('hidden');
                     historyGrid.innerHTML = `
                         <div class="col-span-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -850,7 +849,7 @@
             function renderAllTransfersList() {
                 allTransfersList.innerHTML = '';
 
-                if (allTransfersDataArr.length === 0) {
+                if (!Array.isArray(allTransfersDataArr) || allTransfersDataArr.length === 0) {
                     allPagination.classList.add('hidden');
                     allTransfersList.innerHTML = `
                         <div class="w-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -924,7 +923,7 @@
                     
                     let htmlStr = `
                         <div style="text-align: center; margin-bottom: 30px;">
-                            <img src="https://i.imgur.com/7NkvjPi.png" style="width: 70px; height: auto; margin-bottom: 15px;" crossorigin="anonymous">
+                            <img src="https://proxy.reinasdev.workers.dev/?url=https://i.imgur.com/7NkvjPi.png" style="width: 70px; height: auto; margin-bottom: 15px;" crossorigin="anonymous">
                             <h1 style="font-size: 22px; font-weight: 900; text-transform: uppercase; margin: 0; color: #132a46;">Polícia Militar Revolução Contra o Crime</h1>
                             <h2 style="font-size: 16px; font-weight: 700; color: #83909e; margin: 5px 0;">Administradores do Fórum</h2>
                             <h3 style="font-size: 14px; font-weight: 600; color: #f68b28; margin: 0;">Transferências de Conta</h3>
@@ -949,7 +948,7 @@
                             <tr style="page-break-inside: avoid;">
                                 <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.codigo)}</td>
                                 <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(formatBrasiliaDate(req.dataHora))}</td>
-                                <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.solicitante)}</td>
+                                <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.solicitante)}${req.postadoPor ? ` (por ${escapeHTML(req.postadoPor)})` : ''}</td>
                                 <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.novoNick)}</td>
                                 <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.oficial)}</td>
                                 <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.motivo.split(' - ')[0])}</td>
@@ -965,7 +964,7 @@
                         margin:       10,
                         filename:     'Transferencias_RCC.pdf',
                         image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  { scale: 2, useCORS: true },
+                        html2canvas:  { scale: 2, proxy: 'https://proxy.reinasdev.workers.dev/?url=' },
                         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
                         pagebreak:    { mode: ['css', 'legacy'] }
                     };
@@ -996,6 +995,7 @@
                                 "Código": req.codigo,
                                 "Data da Solicitação": formatBrasiliaDate(req.dataHora),
                                 "Solicitante": req.solicitante,
+                                "Postado Por": req.postadoPor || '',
                                 "Novo Nickname": req.novoNick,
                                 "Oficial Responsável": req.oficial,
                                 "Motivo": req.motivo,
@@ -1064,7 +1064,10 @@
                         <div class="grid grid-cols-2 gap-2 mt-3">
                             <div class="rounded-[12px] border border-brand-borderGray/20 px-3 py-2">
                                 <span class="text-[9px] font-black uppercase tracking-[0.18em] text-brand-textGray">Solicitante</span>
-                                <p class="text-[12px] font-bold text-brand-navy mt-1">${escapeHTML(requestData.solicitante)}</p>
+                                <div class="mt-1 flex flex-col">
+                                    <span class="text-[12px] font-bold text-brand-navy">${escapeHTML(requestData.solicitante)}</span>
+                                    ${requestData.postadoPor ? `<span class="text-[9px] font-bold text-brand-orange mt-0.5" title="Postado por terceiro">por ${escapeHTML(requestData.postadoPor)}</span>` : ''}
+                                </div>
                             </div>
                             <div class="rounded-[12px] border border-brand-borderGray/20 px-3 py-2">
                                 <span class="text-[9px] font-black uppercase tracking-[0.18em] text-brand-textGray">Data</span>
@@ -1133,6 +1136,7 @@
                         <div>
                             <span class="block text-[8px] font-black uppercase tracking-[0.16em] text-brand-textGray mb-0.5">Solicitante</span>
                             <span class="block text-[11px] font-bold text-brand-navy truncate" title="${escapeHTML(req.solicitante)}">${escapeHTML(req.solicitante)}</span>
+                            ${req.postadoPor ? `<span class="block text-[9px] font-bold text-brand-orange mt-0.5" title="Postado por terceiro">por ${escapeHTML(req.postadoPor)}</span>` : ''}
                         </div>
                         <div>
                             <span class="block text-[8px] font-black uppercase tracking-[0.16em] text-brand-textGray mb-0.5">Novo Nick</span>
@@ -1177,7 +1181,7 @@
                     const response = await fetch(`${MACRO_URL}?type=pendentes`);
                     const json = await response.json();
 
-                    if (json.status === "success" && json.data) {
+                    if (json.status === "success" && Array.isArray(json.data)) {
                         requestsDataArr = json.data.filter(req => req.oficial === LOGGED_IN_USER);
                         requestsCurrentPage = 1;
                         renderRequestsGrid();
@@ -1202,7 +1206,7 @@
                     const response = await fetch(`${MACRO_URL}?type=history&user=${encodeURIComponent(LOGGED_IN_USER)}`);
                     const json = await response.json();
 
-                    if (json.status === "success" && json.data && json.data.length > 0) {
+                    if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
                         historyDataArr = [];
                         json.data.forEach(req => {
                             const requestData = {
@@ -1212,6 +1216,7 @@
                                 reason: req.motivo,
                                 newNick: req.novoNick,
                                 comprovacoes: req.comprovacoes,
+                                postadoPor: req.postadoPor || '',
                                 decisionNote: req.comentario || ''
                             };
                             let mappedStatus = 'pending';
@@ -1241,7 +1246,7 @@
                     const response = await fetch(`${MACRO_URL}?type=all`);
                     const json = await response.json();
 
-                    if (json.status === "success" && json.data && json.data.length > 0) {
+                    if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
                         allTransfersDataArr = json.data;
                         allTransfersCurrentPage = 1;
                         renderAllTransfersList();
@@ -1334,6 +1339,7 @@
                         <div>
                             <span class="block text-[8px] font-black uppercase tracking-[0.16em] text-brand-textGray mb-0.5">Solicitante</span>
                             <span class="block text-[11px] font-bold text-brand-navy truncate" title="${escapeHTML(requestData.requester)}">${escapeHTML(requestData.requester)}</span>
+                            ${requestData.postadoPor ? `<span class="block text-[9px] font-bold text-brand-orange mt-0.5" title="Postado por terceiro">por ${escapeHTML(requestData.postadoPor)}</span>` : ''}
                         </div>
                         <div>
                             <span class="block text-[8px] font-black uppercase tracking-[0.16em] text-brand-textGray mb-0.5">Novo Nick</span>
@@ -1445,7 +1451,13 @@
                 if (rccButton) {
                     event.stopPropagation();
                     const historyCard = rccButton.closest('.history-card');
-                    setRccActionState(historyCard, historyCard.dataset.rccStatus !== 'done');
+                    
+                    // Marca visualmente que já foi feito algo
+                    setRccActionState(historyCard, true);
+                    
+                    // Abre a aba nova da página especificada
+                    window.open("https://system.policercc.com.br/requerimentos/tags", "_blank");
+                    
                     return;
                 }
             });
@@ -1541,18 +1553,22 @@
                 const novoNick = document.getElementById('novoNickInput').value.trim();
                 const comprovacoes = document.getElementById('comprovacoesInput').value.trim() || 'Nenhuma (opcional)';
                 
+                // NOVO CÓDIGO DA LÓGICA DE POSTAGEM DE TERCEIRO:
+                const solicitanteDestino = postagemTerceiroCheck.checked ? thirdPartyNicknameInput.value.trim() : LOGGED_IN_USER;
                 const oficialDestino = postagemTerceiroCheck.checked ? LOGGED_IN_USER : oficialHidden.value;
+                const postadoPorValor = postagemTerceiroCheck.checked ? LOGGED_IN_USER : '';
                 const dataHoraAtual = formatBrasiliaDate(new Date());
 
                 const requestPayload = {
                     action: 'create',
                     codigo: codigoAleatorio,
-                    solicitante: LOGGED_IN_USER,
+                    solicitante: solicitanteDestino,
                     dataHora: dataHoraAtual,
                     motivo: motivoTexto,
                     novoNick: novoNick,
                     comprovacoes: comprovacoes,
-                    oficial: oficialDestino
+                    oficial: oficialDestino,
+                    postadoPor: postadoPorValor
                 };
 
                 if (MACRO_URL) {
@@ -1577,11 +1593,12 @@
                 historyDataArr.unshift({
                     data: {
                         requestId: codigoAleatorio,
-                        requester: LOGGED_IN_USER,
+                        requester: solicitanteDestino,
                         date: dataHoraAtual,
                         reason: motivoTexto,
                         newNick: novoNick,
                         comprovacoes: comprovacoes,
+                        postadoPor: postadoPorValor,
                         decisionNote: ''
                     },
                     status: 'pending'
