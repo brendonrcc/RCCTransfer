@@ -1,4 +1,4 @@
-  document.addEventListener('DOMContentLoaded', function() {
+     document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT (MACRO)
@@ -949,7 +949,7 @@
                             <tr style="page-break-inside: avoid;">
                                 <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.codigo)}</td>
                                 <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(formatBrasiliaDate(req.dataHora))}</td>
-                                <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.solicitante)}</td>
+                                <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.solicitante)}${req.postadoPor ? ` (por ${escapeHTML(req.postadoPor)})` : ''}</td>
                                 <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.novoNick)}</td>
                                 <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.oficial)}</td>
                                 <td style="padding: 10px; border: 1px solid #b8c3cd;">${escapeHTML(req.motivo.split(' - ')[0])}</td>
@@ -996,6 +996,7 @@
                                 "Código": req.codigo,
                                 "Data da Solicitação": formatBrasiliaDate(req.dataHora),
                                 "Solicitante": req.solicitante,
+                                "Postado Por": req.postadoPor || '',
                                 "Novo Nickname": req.novoNick,
                                 "Oficial Responsável": req.oficial,
                                 "Motivo": req.motivo,
@@ -1064,7 +1065,10 @@
                         <div class="grid grid-cols-2 gap-2 mt-3">
                             <div class="rounded-[12px] border border-brand-borderGray/20 px-3 py-2">
                                 <span class="text-[9px] font-black uppercase tracking-[0.18em] text-brand-textGray">Solicitante</span>
-                                <p class="text-[12px] font-bold text-brand-navy mt-1">${escapeHTML(requestData.solicitante)}</p>
+                                <div class="mt-1 flex flex-col">
+                                    <span class="text-[12px] font-bold text-brand-navy">${escapeHTML(requestData.solicitante)}</span>
+                                    ${requestData.postadoPor ? `<span class="text-[9px] font-bold text-brand-orange mt-0.5" title="Postado por terceiro">por ${escapeHTML(requestData.postadoPor)}</span>` : ''}
+                                </div>
                             </div>
                             <div class="rounded-[12px] border border-brand-borderGray/20 px-3 py-2">
                                 <span class="text-[9px] font-black uppercase tracking-[0.18em] text-brand-textGray">Data</span>
@@ -1133,6 +1137,7 @@
                         <div>
                             <span class="block text-[8px] font-black uppercase tracking-[0.16em] text-brand-textGray mb-0.5">Solicitante</span>
                             <span class="block text-[11px] font-bold text-brand-navy truncate" title="${escapeHTML(req.solicitante)}">${escapeHTML(req.solicitante)}</span>
+                            ${req.postadoPor ? `<span class="block text-[9px] font-bold text-brand-orange mt-0.5" title="Postado por terceiro">por ${escapeHTML(req.postadoPor)}</span>` : ''}
                         </div>
                         <div>
                             <span class="block text-[8px] font-black uppercase tracking-[0.16em] text-brand-textGray mb-0.5">Novo Nick</span>
@@ -1212,6 +1217,7 @@
                                 reason: req.motivo,
                                 newNick: req.novoNick,
                                 comprovacoes: req.comprovacoes,
+                                postadoPor: req.postadoPor || '',
                                 decisionNote: req.comentario || ''
                             };
                             let mappedStatus = 'pending';
@@ -1334,6 +1340,7 @@
                         <div>
                             <span class="block text-[8px] font-black uppercase tracking-[0.16em] text-brand-textGray mb-0.5">Solicitante</span>
                             <span class="block text-[11px] font-bold text-brand-navy truncate" title="${escapeHTML(requestData.requester)}">${escapeHTML(requestData.requester)}</span>
+                            ${requestData.postadoPor ? `<span class="block text-[9px] font-bold text-brand-orange mt-0.5" title="Postado por terceiro">por ${escapeHTML(requestData.postadoPor)}</span>` : ''}
                         </div>
                         <div>
                             <span class="block text-[8px] font-black uppercase tracking-[0.16em] text-brand-textGray mb-0.5">Novo Nick</span>
@@ -1550,6 +1557,7 @@
                 // NOVO CÓDIGO DA LÓGICA DE POSTAGEM DE TERCEIRO:
                 const solicitanteDestino = postagemTerceiroCheck.checked ? thirdPartyNicknameInput.value.trim() : LOGGED_IN_USER;
                 const oficialDestino = postagemTerceiroCheck.checked ? LOGGED_IN_USER : oficialHidden.value;
+                const postadoPorValor = postagemTerceiroCheck.checked ? LOGGED_IN_USER : '';
                 const dataHoraAtual = formatBrasiliaDate(new Date());
 
                 const requestPayload = {
@@ -1560,7 +1568,8 @@
                     motivo: motivoTexto,
                     novoNick: novoNick,
                     comprovacoes: comprovacoes,
-                    oficial: oficialDestino
+                    oficial: oficialDestino,
+                    postadoPor: postadoPorValor
                 };
 
                 if (MACRO_URL) {
@@ -1590,6 +1599,7 @@
                         reason: motivoTexto,
                         newNick: novoNick,
                         comprovacoes: comprovacoes,
+                        postadoPor: postadoPorValor,
                         decisionNote: ''
                     },
                     status: 'pending'
