@@ -1,4 +1,4 @@
-   document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT E WORKER
@@ -207,7 +207,8 @@
                 }
                 
                 if (WORKER_URL) {
-                    loadSolicitacoesFromMacro(true);
+                    // Carregamento inicial não silencioso para atualizar o badge pendingCount
+                    loadSolicitacoesFromMacro(false);
                 } else {
                     updatePendingCount();
                     renderRequestsGrid();
@@ -531,13 +532,14 @@
                 activePage.classList.add('translate-x-0', 'opacity-100', 'z-10');
                 setActiveNav(activeButtonId);
                 
+                // Recarregamento Sutil
                 if (WORKER_URL) {
                     if (pageId === 'page-solicitacoes') {
-                        loadSolicitacoesFromMacro();
+                        loadSolicitacoesFromMacro(true);
                     } else if (pageId === 'page-historico') {
-                        loadHistoryFromMacro();
+                        loadHistoryFromMacro(true);
                     } else if (pageId === 'page-todas-transferencias') {
-                        loadAllTransfersFromMacro();
+                        loadAllTransfersFromMacro(true);
                     }
                 }
             }
@@ -1227,7 +1229,7 @@
 
             async function loadSolicitacoesFromMacro(isSilent = false) {
                 try {
-                    if (!isSilent) {
+                    if (!isSilent && (!Array.isArray(requestsDataArr) || requestsDataArr.length === 0)) {
                         requestsQueue.innerHTML = '<p class="text-[12px] text-brand-textGray italic p-4 text-center w-full col-span-full">Carregando solicitações pendentes do banco de dados...</p>';
                         requestsPagination.classList.add('hidden');
                     }
@@ -1235,12 +1237,20 @@
                     const data = await getTransfersData();
 
                     if (Array.isArray(data)) {
-                        requestsDataArr = data.filter(req => req.oficial === LOGGED_IN_USER && req.status === 'Pendente');
-                        requestsCurrentPage = 1;
-                        renderRequestsGrid();
+                        const filteredNewData = data.filter(req => req.oficial === LOGGED_IN_USER && req.status === 'Pendente');
+                        
+                        // Recarregamento Sutil: Apenas se os dados forem diferentes
+                        if (JSON.stringify(filteredNewData) !== JSON.stringify(requestsDataArr)) {
+                            requestsDataArr = filteredNewData;
+                            const totalPages = Math.ceil(requestsDataArr.length / ITEMS_PER_PAGE) || 1;
+                            if (requestsCurrentPage > totalPages) requestsCurrentPage = totalPages;
+                            renderRequestsGrid();
+                        }
                     } else {
-                        requestsDataArr = [];
-                        renderRequestsGrid();
+                        if (requestsDataArr.length !== 0) {
+                            requestsDataArr = [];
+                            renderRequestsGrid();
+                        }
                     }
                 } catch (error) {
                     console.error("Erro ao carregar dados da planilha via Worker:", error);
@@ -1250,15 +1260,17 @@
                 }
             }
 
-            async function loadHistoryFromMacro() {
+            async function loadHistoryFromMacro(isSilent = false) {
                 try {
-                    historyGrid.innerHTML = '<p class="text-[12px] text-brand-textGray italic p-4 text-center w-full col-span-full">Carregando seu histórico da base de dados...</p>';
-                    historyPagination.classList.add('hidden');
+                    if (!isSilent && (!Array.isArray(historyDataArr) || historyDataArr.length === 0)) {
+                        historyGrid.innerHTML = '<p class="text-[12px] text-brand-textGray italic p-4 text-center w-full col-span-full">Carregando seu histórico da base de dados...</p>';
+                        historyPagination.classList.add('hidden');
+                    }
 
                     const data = await getTransfersData();
 
                     if (Array.isArray(data) && data.length > 0) {
-                        historyDataArr = [];
+                        const newHistoryData = [];
                         data.forEach(req => {
                             if (req.solicitante === LOGGED_IN_USER) {
                                 const requestData = {
@@ -1275,39 +1287,59 @@
                                 if (req.status === 'Aprovado') mappedStatus = 'approved';
                                 if (req.status === 'Recusado') mappedStatus = 'rejected';
                                 
-                                historyDataArr.push({ data: requestData, status: mappedStatus });
+                                newHistoryData.push({ data: requestData, status: mappedStatus });
                             }
                         });
-                        historyCurrentPage = 1;
-                        renderHistoryGrid();
+                        
+                        // Recarregamento Sutil: Apenas se os dados forem diferentes
+                        if (JSON.stringify(newHistoryData) !== JSON.stringify(historyDataArr)) {
+                            historyDataArr = newHistoryData;
+                            const totalPages = Math.ceil(historyDataArr.length / ITEMS_PER_PAGE) || 1;
+                            if (historyCurrentPage > totalPages) historyCurrentPage = totalPages;
+                            renderHistoryGrid();
+                        }
                     } else {
-                        historyDataArr = [];
-                        renderHistoryGrid();
+                        if (historyDataArr.length !== 0) {
+                            historyDataArr = [];
+                            renderHistoryGrid();
+                        }
                     }
                 } catch (error) {
                     console.error("Erro ao carregar histórico:", error);
-                    historyGrid.innerHTML = '<p class="text-[12px] text-red-500 font-bold p-4 text-center w-full col-span-full">Erro ao carregar seu histórico via Worker.</p>';
+                    if (!isSilent) {
+                        historyGrid.innerHTML = '<p class="text-[12px] text-red-500 font-bold p-4 text-center w-full col-span-full">Erro ao carregar seu histórico via Worker.</p>';
+                    }
                 }
             }
 
-            async function loadAllTransfersFromMacro() {
+            async function loadAllTransfersFromMacro(isSilent = false) {
                 try {
-                    allTransfersList.innerHTML = '<p class="text-[12px] text-brand-textGray italic p-4 text-center w-full">Carregando dados globais da planilha...</p>';
-                    allPagination.classList.add('hidden');
+                    if (!isSilent && (!Array.isArray(allTransfersDataArr) || allTransfersDataArr.length === 0)) {
+                        allTransfersList.innerHTML = '<p class="text-[12px] text-brand-textGray italic p-4 text-center w-full">Carregando dados globais da planilha...</p>';
+                        allPagination.classList.add('hidden');
+                    }
 
                     const data = await getTransfersData();
 
-                    if (Array.isArray(data) && data.length > 0) {
-                        allTransfersDataArr = data;
-                        allTransfersCurrentPage = 1;
-                        renderAllTransfersList();
+                    if (Array.isArray(data)) {
+                        // Recarregamento Sutil: Apenas se os dados forem diferentes
+                        if (JSON.stringify(data) !== JSON.stringify(allTransfersDataArr)) {
+                            allTransfersDataArr = data;
+                            const totalPages = Math.ceil(allTransfersDataArr.length / ITEMS_PER_PAGE_ALL) || 1;
+                            if (allTransfersCurrentPage > totalPages) allTransfersCurrentPage = totalPages;
+                            renderAllTransfersList();
+                        }
                     } else {
-                        allTransfersDataArr = [];
-                        renderAllTransfersList();
+                        if (allTransfersDataArr.length !== 0) {
+                            allTransfersDataArr = [];
+                            renderAllTransfersList();
+                        }
                     }
                 } catch (error) {
                     console.error("Erro ao carregar dados globais:", error);
-                    allTransfersList.innerHTML = '<p class="text-[12px] text-red-500 font-bold p-4 text-center w-full">Erro ao carregar a lista geral via Worker.</p>';
+                    if (!isSilent) {
+                        allTransfersList.innerHTML = '<p class="text-[12px] text-red-500 font-bold p-4 text-center w-full">Erro ao carregar a lista geral via Worker.</p>';
+                    }
                 }
             }
 
@@ -1622,6 +1654,21 @@
                     postadoPor: postadoPorValor
                 };
 
+                // Objeto no exato formato retornado pelo Worker para inserção otimista
+                const optimisticData = {
+                    codigo: codigoAleatorio,
+                    solicitante: solicitanteDestino,
+                    dataHora: dataHoraAtual,
+                    motivo: motivoTexto,
+                    novoNick: novoNick,
+                    comprovacoes: comprovacoes,
+                    oficial: oficialDestino,
+                    status: 'Pendente',
+                    comentario: '',
+                    dataHoraDecisao: '',
+                    postadoPor: postadoPorValor
+                };
+
                 if (MACRO_URL) {
                     try {
                         await fetch(MACRO_URL, {
@@ -1636,7 +1683,7 @@
                 }
 
                 if (oficialDestino === LOGGED_IN_USER) {
-                    requestsDataArr.unshift(requestPayload);
+                    requestsDataArr.unshift(optimisticData);
                     requestsCurrentPage = 1;
                     renderRequestsGrid();
                 }
