@@ -1,17 +1,55 @@
- document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
-            // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT (MACRO)
+            // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT E WORKER
             // ==========================================
-            const MACRO_URL = "https://script.google.com/macros/s/AKfycbwkiVTR4HUA-w2TdNHP67yrQXVQy8LE17PufLYlsChcVdfyo7OgmAzA_hxH3P9cYvWv_w/exec"; 
+            const MACRO_URL = "https://script.google.com/macros/s/AKfycbyJ2mp1t96ri6alckA2Znm2UXSABh0I7_uzMywZqBncpL2012S0JYxriofntrcH6njTOg/exec"; 
             
-            // COLE AQUI A URL GERADA NA PARTE 1 DESSE PROMPT!
-            const MACRO_GRUPOS_URL = "https://script.google.com/macros/s/AKfycbz63ZsYAPRO2JAYhmJOyUKqZVW1y0h-jBl4bs1xQMlkc42M74HyD6LVIstHbKpHnB10Ow/exec"; 
+            const WORKER_URL = "https://rcctransfer.brendon-goncalves.workers.dev";
+            const GID_TRANSFERS = "1562040275";
+            const GID_GRUPOS = "1875567517"; // Deixei a GID correta das companhias aqui
             
             let LOGGED_IN_USER = "Visitante"; 
             const ITEMS_PER_PAGE = 6; 
             const ITEMS_PER_PAGE_ALL = 10; 
             // ==========================================
+
+            // Função para parsear o TSV
+            function parseTSV(text) {
+                const lines = text.replace(/\r/g, '').split('\n');
+                return lines.filter(line => line.trim() !== '').map(line => line.split('\t'));
+            }
+
+            // Função base para puxar e tratar o TSV das transferências do Worker
+            async function getTransfersData() {
+                const response = await fetch(`${WORKER_URL}?gid=${GID_TRANSFERS}`);
+                if (!response.ok) throw new Error("Erro na rede: " + response.status);
+                
+                const text = await response.text();
+                const rows = parseTSV(text);
+                const data = [];
+                
+                // Pula o cabeçalho (i=1)
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || row.length < 1 || !row[0]) continue;
+                    
+                    data.push({
+                        codigo: row[0],
+                        solicitante: row[1],
+                        dataHora: row[2],
+                        motivo: row[3],
+                        novoNick: row[4],
+                        comprovacoes: row[5],
+                        oficial: row[6],
+                        status: row[7] || 'Pendente',
+                        comentario: row[8] || '',
+                        dataHoraDecisao: row[9] || '',
+                        postadoPor: row[10] || ''
+                    });
+                }
+                return data.reverse(); // Retorna os mais recentes primeiro
+            }
 
             // ==========================================
             // SISTEMA DE AUTENTICAÇÃO DO FÓRUM E GRUPOS
@@ -168,7 +206,7 @@
                     document.getElementById('postagemTerceiroWrapper').classList.add('hidden');
                 }
                 
-                if (MACRO_URL) {
+                if (WORKER_URL) {
                     loadSolicitacoesFromMacro(true);
                 } else {
                     updatePendingCount();
@@ -177,7 +215,7 @@
                     renderAllTransfersList();
                 }
                 
-                // Carrega dados das companhias (novo macro)
+                // Carrega dados das companhias (novo worker TSV)
                 loadGruposTarefas();
             }
 
@@ -203,7 +241,7 @@
             let oficiais = []; 
             let isLoadingOficiais = true;
 
-            // Arrays dinâmicos populados via Macro
+            // Arrays dinâmicos populados via Worker
             let companhiasData = [];
             let subcompanhiasData = [];
             
@@ -280,20 +318,36 @@
             let allSearchQuery = '';
 
             // ==========================================
-            // NOVO: CARREGAR GRUPOS DE TAREFAS VIA MACRO
+            // NOVO: CARREGAR GRUPOS DE TAREFAS VIA WORKER
             // ==========================================
             async function loadGruposTarefas() {
-                if (!MACRO_GRUPOS_URL || MACRO_GRUPOS_URL === "COLE_A_URL_DO_NOVO_MACRO_AQUI") return;
                 try {
-                    const response = await fetch(MACRO_GRUPOS_URL);
-                    const json = await response.json();
+                    const response = await fetch(`${WORKER_URL}?gid=${GID_GRUPOS}`);
+                    if (!response.ok) return;
+                    const text = await response.text();
+                    const rows = parseTSV(text);
                     
-                    if (json.status === "success") {
-                        companhiasData = json.data.companhias;
-                        subcompanhiasData = json.data.subcompanhias;
+                    companhiasData = [];
+                    subcompanhiasData = [];
+                    
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row || row.length < 2) continue;
+                        
+                        const compName = row[0];
+                        const compTopic = row[1];
+                        const subName = row[3];
+                        const subTopic = row[4];
+                        
+                        if (compName && compName.trim() !== "") {
+                            companhiasData.push({ name: compName.trim(), topicId: compTopic ? compTopic.trim() : "" });
+                        }
+                        if (subName && subName.trim() !== "") {
+                            subcompanhiasData.push({ name: subName.trim(), topicId: subTopic ? subTopic.trim() : "" });
+                        }
                     }
                 } catch (error) {
-                    console.error("Erro ao carregar dados das companhias:", error);
+                    console.error("Erro ao carregar dados das companhias via Worker:", error);
                 }
             }
 
@@ -477,7 +531,7 @@
                 activePage.classList.add('translate-x-0', 'opacity-100', 'z-10');
                 setActiveNav(activeButtonId);
                 
-                if (MACRO_URL) {
+                if (WORKER_URL) {
                     if (pageId === 'page-solicitacoes') {
                         loadSolicitacoesFromMacro();
                     } else if (pageId === 'page-historico') {
@@ -709,7 +763,7 @@
             });
 
             function getFilteredAllTransfers() {
-                if (!allTransfersDataArr) return [];
+                if (!Array.isArray(allTransfersDataArr)) return [];
                 return allTransfersDataArr.filter(req => {
                     if (!allSearchQuery) return true;
                     return (req.codigo && req.codigo.toLowerCase().includes(allSearchQuery)) ||
@@ -721,7 +775,7 @@
             }
 
             function updatePendingCount() {
-                const total = requestsDataArr.length;
+                const total = Array.isArray(requestsDataArr) ? requestsDataArr.length : 0;
                 const formattedTotal = String(total).padStart(2, '0');
                 pendingCount.textContent = formattedTotal;
                 navPendingBadge.textContent = total;
@@ -731,7 +785,7 @@
             function renderRequestsGrid() {
                 requestsQueue.innerHTML = '';
                 
-                if (requestsDataArr.length === 0) {
+                if (!Array.isArray(requestsDataArr) || requestsDataArr.length === 0) {
                     requestsPagination.classList.add('hidden');
                     requestsQueue.innerHTML = `
                         <div class="col-span-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -793,7 +847,7 @@
             function renderHistoryGrid() {
                 historyGrid.innerHTML = '';
 
-                if (historyDataArr.length === 0) {
+                if (!Array.isArray(historyDataArr) || historyDataArr.length === 0) {
                     historyPagination.classList.add('hidden');
                     historyGrid.innerHTML = `
                         <div class="col-span-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -850,7 +904,7 @@
             function renderAllTransfersList() {
                 allTransfersList.innerHTML = '';
 
-                if (allTransfersDataArr.length === 0) {
+                if (!Array.isArray(allTransfersDataArr) || allTransfersDataArr.length === 0) {
                     allPagination.classList.add('hidden');
                     allTransfersList.innerHTML = `
                         <div class="w-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -924,7 +978,7 @@
                     
                     let htmlStr = `
                         <div style="text-align: center; margin-bottom: 30px;">
-                            <img src="https://i.imgur.com/7NkvjPi.png" style="width: 70px; height: auto; margin-bottom: 15px;" crossorigin="anonymous">
+                            <img src="https://proxy.reinasdev.workers.dev/?url=https://i.imgur.com/7NkvjPi.png" style="width: 70px; height: auto; margin-bottom: 15px;" crossorigin="anonymous">
                             <h1 style="font-size: 22px; font-weight: 900; text-transform: uppercase; margin: 0; color: #132a46;">Polícia Militar Revolução Contra o Crime</h1>
                             <h2 style="font-size: 16px; font-weight: 700; color: #83909e; margin: 5px 0;">Administradores do Fórum</h2>
                             <h3 style="font-size: 14px; font-weight: 600; color: #f68b28; margin: 0;">Transferências de Conta</h3>
@@ -965,7 +1019,7 @@
                         margin:       10,
                         filename:     'Transferencias_RCC.pdf',
                         image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  { scale: 2, useCORS: true },
+                        html2canvas:  { scale: 2, proxy: 'https://proxy.reinasdev.workers.dev/?url=' },
                         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
                         pagebreak:    { mode: ['css', 'legacy'] }
                     };
@@ -1172,18 +1226,16 @@
             }
 
             async function loadSolicitacoesFromMacro(isSilent = false) {
-                if (!MACRO_URL) return;
                 try {
                     if (!isSilent) {
                         requestsQueue.innerHTML = '<p class="text-[12px] text-brand-textGray italic p-4 text-center w-full col-span-full">Carregando solicitações pendentes do banco de dados...</p>';
                         requestsPagination.classList.add('hidden');
                     }
                     
-                    const response = await fetch(`${MACRO_URL}?type=pendentes`);
-                    const json = await response.json();
+                    const data = await getTransfersData();
 
-                    if (json.status === "success" && json.data) {
-                        requestsDataArr = json.data.filter(req => req.oficial === LOGGED_IN_USER);
+                    if (Array.isArray(data)) {
+                        requestsDataArr = data.filter(req => req.oficial === LOGGED_IN_USER && req.status === 'Pendente');
                         requestsCurrentPage = 1;
                         renderRequestsGrid();
                     } else {
@@ -1191,40 +1243,40 @@
                         renderRequestsGrid();
                     }
                 } catch (error) {
-                    console.error("Erro ao carregar dados da planilha:", error);
+                    console.error("Erro ao carregar dados da planilha via Worker:", error);
                     if (!isSilent) {
-                        requestsQueue.innerHTML = '<p class="text-[12px] text-red-500 font-bold p-4 text-center w-full col-span-full">Erro ao conectar com a planilha. Verifique a URL do Web App.</p>';
+                        requestsQueue.innerHTML = '<p class="text-[12px] text-red-500 font-bold p-4 text-center w-full col-span-full">Erro ao conectar com a planilha. Verifique a URL do Web App ou Worker.</p>';
                     }
                 }
             }
 
             async function loadHistoryFromMacro() {
-                if (!MACRO_URL) return;
                 try {
                     historyGrid.innerHTML = '<p class="text-[12px] text-brand-textGray italic p-4 text-center w-full col-span-full">Carregando seu histórico da base de dados...</p>';
                     historyPagination.classList.add('hidden');
 
-                    const response = await fetch(`${MACRO_URL}?type=history&user=${encodeURIComponent(LOGGED_IN_USER)}`);
-                    const json = await response.json();
+                    const data = await getTransfersData();
 
-                    if (json.status === "success" && json.data && json.data.length > 0) {
+                    if (Array.isArray(data) && data.length > 0) {
                         historyDataArr = [];
-                        json.data.forEach(req => {
-                            const requestData = {
-                                requestId: req.codigo,
-                                requester: req.solicitante,
-                                date: req.dataHora,
-                                reason: req.motivo,
-                                newNick: req.novoNick,
-                                comprovacoes: req.comprovacoes,
-                                postadoPor: req.postadoPor || '',
-                                decisionNote: req.comentario || ''
-                            };
-                            let mappedStatus = 'pending';
-                            if (req.status === 'Aprovado') mappedStatus = 'approved';
-                            if (req.status === 'Recusado') mappedStatus = 'rejected';
-                            
-                            historyDataArr.push({ data: requestData, status: mappedStatus });
+                        data.forEach(req => {
+                            if (req.solicitante === LOGGED_IN_USER) {
+                                const requestData = {
+                                    requestId: req.codigo,
+                                    requester: req.solicitante,
+                                    date: req.dataHora,
+                                    reason: req.motivo,
+                                    newNick: req.novoNick,
+                                    comprovacoes: req.comprovacoes,
+                                    postadoPor: req.postadoPor || '',
+                                    decisionNote: req.comentario || ''
+                                };
+                                let mappedStatus = 'pending';
+                                if (req.status === 'Aprovado') mappedStatus = 'approved';
+                                if (req.status === 'Recusado') mappedStatus = 'rejected';
+                                
+                                historyDataArr.push({ data: requestData, status: mappedStatus });
+                            }
                         });
                         historyCurrentPage = 1;
                         renderHistoryGrid();
@@ -1234,21 +1286,19 @@
                     }
                 } catch (error) {
                     console.error("Erro ao carregar histórico:", error);
-                    historyGrid.innerHTML = '<p class="text-[12px] text-red-500 font-bold p-4 text-center w-full col-span-full">Erro ao carregar seu histórico. Verifique a URL do Web App.</p>';
+                    historyGrid.innerHTML = '<p class="text-[12px] text-red-500 font-bold p-4 text-center w-full col-span-full">Erro ao carregar seu histórico via Worker.</p>';
                 }
             }
 
             async function loadAllTransfersFromMacro() {
-                if (!MACRO_URL) return;
                 try {
                     allTransfersList.innerHTML = '<p class="text-[12px] text-brand-textGray italic p-4 text-center w-full">Carregando dados globais da planilha...</p>';
                     allPagination.classList.add('hidden');
 
-                    const response = await fetch(`${MACRO_URL}?type=all`);
-                    const json = await response.json();
+                    const data = await getTransfersData();
 
-                    if (json.status === "success" && json.data && json.data.length > 0) {
-                        allTransfersDataArr = json.data;
+                    if (Array.isArray(data) && data.length > 0) {
+                        allTransfersDataArr = data;
                         allTransfersCurrentPage = 1;
                         renderAllTransfersList();
                     } else {
@@ -1257,7 +1307,7 @@
                     }
                 } catch (error) {
                     console.error("Erro ao carregar dados globais:", error);
-                    allTransfersList.innerHTML = '<p class="text-[12px] text-red-500 font-bold p-4 text-center w-full">Erro ao carregar a lista geral. Verifique a URL do Web App.</p>';
+                    allTransfersList.innerHTML = '<p class="text-[12px] text-red-500 font-bold p-4 text-center w-full">Erro ao carregar a lista geral via Worker.</p>';
                 }
             }
 
