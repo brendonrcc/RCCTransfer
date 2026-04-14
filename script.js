@@ -1,11 +1,10 @@
-      document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT (MACRO)
             // ==========================================
             const MACRO_URL = "https://script.google.com/macros/s/AKfycbyJ2mp1t96ri6alckA2Znm2UXSABh0I7_uzMywZqBncpL2012S0JYxriofntrcH6njTOg/exec"; 
             
-            // COLE AQUI A URL GERADA NA PARTE 1 DESSE PROMPT!
             const MACRO_GRUPOS_URL = "https://script.google.com/macros/s/AKfycbwalagQXlIjk4elFLYUtiKLYl-OD7ycMdaqY5umA9YhNymDd_6l54-Sx9WCyRb2M88Tow/exec"; 
             
             let LOGGED_IN_USER = "Visitante"; 
