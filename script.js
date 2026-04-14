@@ -3,10 +3,10 @@
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT (MACRO)
             // ==========================================
-            const MACRO_URL = "https://script.google.com/macros/s/AKfycbzQYz49ZNVJFkIldgCtZ7c9UrhN9bvXql16ppuo5QVloj8kRlk5xgstaItKxmh9LF0g3g/exec"; 
+            const MACRO_URL = "https://script.google.com/macros/s/AKfycbxM06Ddm-3IXNKWD2snRHbS9yzW6CQohUE-sI4KypNGdFSJjI_Cv73FyBocSH28UNiElg/exec"; 
             
             // COLE AQUI A URL GERADA NA PARTE 1 DESSE PROMPT!
-            const MACRO_GRUPOS_URL = "https://script.google.com/macros/s/AKfycbxUZuOWPi2VFRP0fSrlIJuLOcF4XlSTs9V7d8YuPzqqNz95S98VlnKFFoSyxb-y0ZXxTw/exec"; 
+            const MACRO_GRUPOS_URL = "https://script.google.com/macros/s/AKfycbwalagQXlIjk4elFLYUtiKLYl-OD7ycMdaqY5umA9YhNymDd_6l54-Sx9WCyRb2M88Tow/exec"; 
             
             let LOGGED_IN_USER = "Visitante"; 
             const ITEMS_PER_PAGE = 6; 
