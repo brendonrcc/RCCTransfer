@@ -1,10 +1,11 @@
-   document.addEventListener('DOMContentLoaded', function() {
+ document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT (MACRO)
             // ==========================================
             const MACRO_URL = "https://script.google.com/macros/s/AKfycbwkiVTR4HUA-w2TdNHP67yrQXVQy8LE17PufLYlsChcVdfyo7OgmAzA_hxH3P9cYvWv_w/exec"; 
             
+            // COLE AQUI A URL GERADA NA PARTE 1 DESSE PROMPT!
             const MACRO_GRUPOS_URL = "https://script.google.com/macros/s/AKfycbz63ZsYAPRO2JAYhmJOyUKqZVW1y0h-jBl4bs1xQMlkc42M74HyD6LVIstHbKpHnB10Ow/exec"; 
             
             let LOGGED_IN_USER = "Visitante"; 
@@ -287,9 +288,9 @@
                     const response = await fetch(MACRO_GRUPOS_URL);
                     const json = await response.json();
                     
-                    if (json.status === "success" && json.data) {
-                        companhiasData = Array.isArray(json.data.companhias) ? json.data.companhias : [];
-                        subcompanhiasData = Array.isArray(json.data.subcompanhias) ? json.data.subcompanhias : [];
+                    if (json.status === "success") {
+                        companhiasData = json.data.companhias;
+                        subcompanhiasData = json.data.subcompanhias;
                     }
                 } catch (error) {
                     console.error("Erro ao carregar dados das companhias:", error);
@@ -708,7 +709,7 @@
             });
 
             function getFilteredAllTransfers() {
-                if (!Array.isArray(allTransfersDataArr)) return [];
+                if (!allTransfersDataArr) return [];
                 return allTransfersDataArr.filter(req => {
                     if (!allSearchQuery) return true;
                     return (req.codigo && req.codigo.toLowerCase().includes(allSearchQuery)) ||
@@ -720,7 +721,7 @@
             }
 
             function updatePendingCount() {
-                const total = Array.isArray(requestsDataArr) ? requestsDataArr.length : 0;
+                const total = requestsDataArr.length;
                 const formattedTotal = String(total).padStart(2, '0');
                 pendingCount.textContent = formattedTotal;
                 navPendingBadge.textContent = total;
@@ -730,7 +731,7 @@
             function renderRequestsGrid() {
                 requestsQueue.innerHTML = '';
                 
-                if (!Array.isArray(requestsDataArr) || requestsDataArr.length === 0) {
+                if (requestsDataArr.length === 0) {
                     requestsPagination.classList.add('hidden');
                     requestsQueue.innerHTML = `
                         <div class="col-span-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -792,7 +793,7 @@
             function renderHistoryGrid() {
                 historyGrid.innerHTML = '';
 
-                if (!Array.isArray(historyDataArr) || historyDataArr.length === 0) {
+                if (historyDataArr.length === 0) {
                     historyPagination.classList.add('hidden');
                     historyGrid.innerHTML = `
                         <div class="col-span-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -849,7 +850,7 @@
             function renderAllTransfersList() {
                 allTransfersList.innerHTML = '';
 
-                if (!Array.isArray(allTransfersDataArr) || allTransfersDataArr.length === 0) {
+                if (allTransfersDataArr.length === 0) {
                     allPagination.classList.add('hidden');
                     allTransfersList.innerHTML = `
                         <div class="w-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -923,7 +924,7 @@
                     
                     let htmlStr = `
                         <div style="text-align: center; margin-bottom: 30px;">
-                            <img src="https://proxy.reinasdev.workers.dev/?url=https://i.imgur.com/7NkvjPi.png" style="width: 70px; height: auto; margin-bottom: 15px;" crossorigin="anonymous">
+                            <img src="https://i.imgur.com/7NkvjPi.png" style="width: 70px; height: auto; margin-bottom: 15px;" crossorigin="anonymous">
                             <h1 style="font-size: 22px; font-weight: 900; text-transform: uppercase; margin: 0; color: #132a46;">Polícia Militar Revolução Contra o Crime</h1>
                             <h2 style="font-size: 16px; font-weight: 700; color: #83909e; margin: 5px 0;">Administradores do Fórum</h2>
                             <h3 style="font-size: 14px; font-weight: 600; color: #f68b28; margin: 0;">Transferências de Conta</h3>
@@ -964,7 +965,7 @@
                         margin:       10,
                         filename:     'Transferencias_RCC.pdf',
                         image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  { scale: 2, proxy: 'https://proxy.reinasdev.workers.dev/?url=' },
+                        html2canvas:  { scale: 2, useCORS: true },
                         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
                         pagebreak:    { mode: ['css', 'legacy'] }
                     };
@@ -1181,7 +1182,7 @@
                     const response = await fetch(`${MACRO_URL}?type=pendentes`);
                     const json = await response.json();
 
-                    if (json.status === "success" && Array.isArray(json.data)) {
+                    if (json.status === "success" && json.data) {
                         requestsDataArr = json.data.filter(req => req.oficial === LOGGED_IN_USER);
                         requestsCurrentPage = 1;
                         renderRequestsGrid();
@@ -1206,7 +1207,7 @@
                     const response = await fetch(`${MACRO_URL}?type=history&user=${encodeURIComponent(LOGGED_IN_USER)}`);
                     const json = await response.json();
 
-                    if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
+                    if (json.status === "success" && json.data && json.data.length > 0) {
                         historyDataArr = [];
                         json.data.forEach(req => {
                             const requestData = {
@@ -1246,7 +1247,7 @@
                     const response = await fetch(`${MACRO_URL}?type=all`);
                     const json = await response.json();
 
-                    if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
+                    if (json.status === "success" && json.data && json.data.length > 0) {
                         allTransfersDataArr = json.data;
                         allTransfersCurrentPage = 1;
                         renderAllTransfersList();
