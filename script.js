@@ -3,7 +3,7 @@
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT E WORKER
             // ==========================================
-            const MACRO_URL = "https://script.google.com/macros/s/AKfycbyJ2mp1t96ri6alckA2Znm2UXSABh0I7_uzMywZqBncpL2012S0JYxriofntrcH6njTOg/exec"; 
+            const MACRO_URL = "https://script.google.com/macros/s/AKfycbxz85bbYrFMNO5DsVqhlV91LTmX_-LLRtUyhg5uuVyU9Ov-vq0nlBznBvXZeVgzXk0l4w/exec"; 
             
             const WORKER_URL = "https://rcctransfer.brendon-goncalves.workers.dev";
             const GID_TRANSFERS = "1562040275";
