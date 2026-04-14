@@ -1,4 +1,4 @@
-  document.addEventListener('DOMContentLoaded', function() {
+   document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT E WORKER
@@ -20,35 +20,51 @@
                 return lines.filter(line => line.trim() !== '').map(line => line.split('\t'));
             }
 
+            // Variável para evitar requisições duplicadas simultâneas ao recarregar a página
+            let ongoingTransfersPromise = null;
+
             // Função base para puxar e tratar o TSV das transferências do Worker
-            async function getTransfersData() {
-                const response = await fetch(`${WORKER_URL}?gid=${GID_TRANSFERS}`);
-                if (!response.ok) throw new Error("Erro na rede: " + response.status);
-                
-                const text = await response.text();
-                const rows = parseTSV(text);
-                const data = [];
-                
-                // Pula o cabeçalho (i=1)
-                for (let i = 1; i < rows.length; i++) {
-                    const row = rows[i];
-                    if (!row || row.length < 1 || !row[0]) continue;
-                    
-                    data.push({
-                        codigo: row[0],
-                        solicitante: row[1],
-                        dataHora: row[2],
-                        motivo: row[3],
-                        novoNick: row[4],
-                        comprovacoes: row[5],
-                        oficial: row[6],
-                        status: row[7] || 'Pendente',
-                        comentario: row[8] || '',
-                        dataHoraDecisao: row[9] || '',
-                        postadoPor: row[10] || ''
-                    });
+            async function getTransfersData(forceReload = false) {
+                if (ongoingTransfersPromise && !forceReload) {
+                    return ongoingTransfersPromise;
                 }
-                return data.reverse(); // Retorna os mais recentes primeiro
+
+                ongoingTransfersPromise = (async () => {
+                    try {
+                        const ts = new Date().getTime();
+                        const response = await fetch(`${WORKER_URL}?gid=${GID_TRANSFERS}&t=${ts}`, { cache: 'no-store' });
+                        if (!response.ok) throw new Error("Erro na rede: " + response.status);
+                        
+                        const text = await response.text();
+                        const rows = parseTSV(text);
+                        const data = [];
+                        
+                        // Pula o cabeçalho (i=1)
+                        for (let i = 1; i < rows.length; i++) {
+                            const row = rows[i];
+                            if (!row || row.length < 1 || !row[0]) continue;
+                            
+                            data.push({
+                                codigo: row[0],
+                                solicitante: row[1],
+                                dataHora: row[2],
+                                motivo: row[3],
+                                novoNick: row[4],
+                                comprovacoes: row[5],
+                                oficial: row[6],
+                                status: row[7] || 'Pendente',
+                                comentario: row[8] || '',
+                                dataHoraDecisao: row[9] || '',
+                                postadoPor: row[10] || ''
+                            });
+                        }
+                        return data.reverse(); // Retorna os mais recentes primeiro
+                    } finally {
+                        setTimeout(() => { ongoingTransfersPromise = null; }, 500);
+                    }
+                })();
+
+                return ongoingTransfersPromise;
             }
 
             // ==========================================
@@ -324,9 +340,10 @@
             // ==========================================
             // NOVO: CARREGAR GRUPOS DE TAREFAS VIA WORKER
             // ==========================================
-            async function loadGruposTarefas() {
+            async function loadGruposTarefas(forceReload = false) {
                 try {
-                    const response = await fetch(`${WORKER_URL}?gid=${GID_GRUPOS}`);
+                    const ts = new Date().getTime();
+                    const response = await fetch(`${WORKER_URL}?gid=${GID_GRUPOS}&t=${ts}`, { cache: 'no-store' });
                     if (!response.ok) return;
                     const text = await response.text();
                     const rows = parseTSV(text);
@@ -974,7 +991,7 @@
                     btnReloadData.classList.add('opacity-50', 'cursor-not-allowed');
 
                     try {
-                        // Recarrega silenciosamente as abas ativas e os grupos de tarefas
+                        // Recarrega silenciosamente as abas ativas e os grupos de tarefas ignorando o cache
                         await Promise.all([
                             loadSolicitacoesFromMacro(true),
                             loadHistoryFromMacro(true),
