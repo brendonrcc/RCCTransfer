@@ -1,4 +1,4 @@
-    document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT E WORKER
@@ -1222,7 +1222,6 @@
                 const div = document.createElement('div');
                 div.className = "bg-white rounded-[16px] border border-brand-borderGray/30 p-5 hover:border-brand-navy/30 transition-all flex flex-col gap-4";
                 
-                const decisionText = req.status === 'Aprovado' ? 'Aprovação confirmada.' : (req.comentario || 'Sem comentário.');
                 const decisionDate = req.dataHoraDecisao ? `(${escapeHTML(formatBrasiliaDate(req.dataHoraDecisao))})` : '';
 
                 const provasHtml = req.comprovacoes && req.comprovacoes !== 'Nenhuma (opcional)' 
@@ -1267,14 +1266,16 @@
                         </div>
                     </div>
 
-                    ${req.status !== 'Pendente' ? `
-                    <div class="mt-1 bg-brand-surface/40 rounded-[12px] p-3 flex items-start gap-2.5">
-                        <i class="ph-fill ph-info text-brand-textGray text-sm shrink-0 mt-0.5"></i>
-                        <p class="text-[10px] text-brand-navy leading-relaxed font-medium">
-                            <span class="text-brand-textGray font-bold uppercase tracking-widest text-[8px] mr-1">Avaliação:</span>
-                            ${escapeHTML(decisionText)} 
-                            <span class="text-brand-textGray opacity-70 ml-1 font-normal">${decisionDate}</span>
-                        </p>
+                    ${req.status === 'Recusado' ? `
+                    <div class="mt-2 bg-red-500/5 border border-red-500/10 rounded-[12px] p-3.5 flex items-start gap-3">
+                        <i class="ph-fill ph-info text-red-500 text-[16px] shrink-0 mt-0.5"></i>
+                        <div class="flex-1 flex flex-col">
+                            <span class="text-brand-textGray font-bold uppercase tracking-widest text-[9px] mb-1">Motivo(s):</span>
+                            <p class="text-[11px] text-brand-navy leading-relaxed font-medium">
+                                ${escapeHTML(req.comentario || 'Sem comentário registrado.')}
+                                ${decisionDate ? `<span class="text-brand-textGray opacity-70 ml-1 font-normal inline-block">${decisionDate}</span>` : ''}
+                            </p>
+                        </div>
                     </div>
                     ` : ''}
                 `;
@@ -1498,13 +1499,15 @@
                         </div>
                     </div>
 
-                    ${!isPending ? `
-                    <div class="mt-1 bg-brand-surface/40 rounded-[12px] p-3 flex items-start gap-2.5">
-                        <i class="ph-fill ph-info text-brand-textGray text-sm shrink-0 mt-0.5"></i>
-                        <p class="text-[10px] text-brand-navy leading-relaxed font-medium">
-                            <span class="text-brand-textGray font-bold uppercase tracking-widest text-[8px] mr-1">Avaliação:</span>
-                            ${escapeHTML(decisionNote)}
-                        </p>
+                    ${isRejected ? `
+                    <div class="mt-2 bg-red-500/5 border border-red-500/10 rounded-[12px] p-3.5 flex items-start gap-3">
+                        <i class="ph-fill ph-info text-red-500 text-[16px] shrink-0 mt-0.5"></i>
+                        <div class="flex-1 flex flex-col">
+                            <span class="text-brand-textGray font-bold uppercase tracking-widest text-[9px] mb-1">Motivo(s):</span>
+                            <p class="text-[11px] text-brand-navy leading-relaxed font-medium">
+                                ${escapeHTML(decisionNote)}
+                            </p>
+                        </div>
                     </div>
                     ` : ''}
 
