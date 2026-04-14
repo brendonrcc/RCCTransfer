@@ -1,4 +1,4 @@
-      document.addEventListener('DOMContentLoaded', function() {
+     document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT (MACRO)
@@ -288,9 +288,9 @@
                     const response = await fetch(MACRO_GRUPOS_URL);
                     const json = await response.json();
                     
-                    if (json.status === "success") {
-                        companhiasData = json.data.companhias;
-                        subcompanhiasData = json.data.subcompanhias;
+                    if (json.status === "success" && json.data) {
+                        companhiasData = Array.isArray(json.data.companhias) ? json.data.companhias : [];
+                        subcompanhiasData = Array.isArray(json.data.subcompanhias) ? json.data.subcompanhias : [];
                     }
                 } catch (error) {
                     console.error("Erro ao carregar dados das companhias:", error);
@@ -709,7 +709,7 @@
             });
 
             function getFilteredAllTransfers() {
-                if (!allTransfersDataArr) return [];
+                if (!Array.isArray(allTransfersDataArr)) return [];
                 return allTransfersDataArr.filter(req => {
                     if (!allSearchQuery) return true;
                     return (req.codigo && req.codigo.toLowerCase().includes(allSearchQuery)) ||
@@ -721,7 +721,7 @@
             }
 
             function updatePendingCount() {
-                const total = requestsDataArr.length;
+                const total = Array.isArray(requestsDataArr) ? requestsDataArr.length : 0;
                 const formattedTotal = String(total).padStart(2, '0');
                 pendingCount.textContent = formattedTotal;
                 navPendingBadge.textContent = total;
@@ -731,7 +731,7 @@
             function renderRequestsGrid() {
                 requestsQueue.innerHTML = '';
                 
-                if (requestsDataArr.length === 0) {
+                if (!Array.isArray(requestsDataArr) || requestsDataArr.length === 0) {
                     requestsPagination.classList.add('hidden');
                     requestsQueue.innerHTML = `
                         <div class="col-span-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -793,7 +793,7 @@
             function renderHistoryGrid() {
                 historyGrid.innerHTML = '';
 
-                if (historyDataArr.length === 0) {
+                if (!Array.isArray(historyDataArr) || historyDataArr.length === 0) {
                     historyPagination.classList.add('hidden');
                     historyGrid.innerHTML = `
                         <div class="col-span-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -850,7 +850,7 @@
             function renderAllTransfersList() {
                 allTransfersList.innerHTML = '';
 
-                if (allTransfersDataArr.length === 0) {
+                if (!Array.isArray(allTransfersDataArr) || allTransfersDataArr.length === 0) {
                     allPagination.classList.add('hidden');
                     allTransfersList.innerHTML = `
                         <div class="w-full bg-white/70 border border-dashed border-brand-borderGray rounded-[24px] p-8 text-center max-w-md mx-auto mt-4">
@@ -1182,7 +1182,7 @@
                     const response = await fetch(`${MACRO_URL}?type=pendentes`);
                     const json = await response.json();
 
-                    if (json.status === "success" && json.data) {
+                    if (json.status === "success" && Array.isArray(json.data)) {
                         requestsDataArr = json.data.filter(req => req.oficial === LOGGED_IN_USER);
                         requestsCurrentPage = 1;
                         renderRequestsGrid();
@@ -1207,7 +1207,7 @@
                     const response = await fetch(`${MACRO_URL}?type=history&user=${encodeURIComponent(LOGGED_IN_USER)}`);
                     const json = await response.json();
 
-                    if (json.status === "success" && json.data && json.data.length > 0) {
+                    if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
                         historyDataArr = [];
                         json.data.forEach(req => {
                             const requestData = {
@@ -1247,7 +1247,7 @@
                     const response = await fetch(`${MACRO_URL}?type=all`);
                     const json = await response.json();
 
-                    if (json.status === "success" && json.data && json.data.length > 0) {
+                    if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
                         allTransfersDataArr = json.data;
                         allTransfersCurrentPage = 1;
                         renderAllTransfersList();
