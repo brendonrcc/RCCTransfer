@@ -1,4 +1,4 @@
-  document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT E WORKER
@@ -7,7 +7,7 @@
             
             const WORKER_URL = "https://rcctransfer.brendon-goncalves.workers.dev";
             const GID_TRANSFERS = "1562040275";
-            const GID_GRUPOS = "1875567517"; // Deixei a GID correta das companhias aqui
+            const GID_GRUPOS = "1875567517"; // GID correta das companhias
             
             let LOGGED_IN_USER = "Visitante"; 
             const ITEMS_PER_PAGE = 6; 
@@ -222,6 +222,9 @@
                     document.getElementById('postagemTerceiroWrapper').classList.add('hidden');
                 }
                 
+                // 1º Carrega dados das companhias para garantir que os dropdowns possam ser populados
+                await loadGruposTarefas();
+
                 if (WORKER_URL) {
                     // Carregamento inicial não silencioso para atualizar o badge pendingCount
                     loadSolicitacoesFromMacro(false);
@@ -231,9 +234,6 @@
                     renderHistoryGrid();
                     renderAllTransfersList();
                 }
-                
-                // Carrega dados das companhias (novo worker TSV)
-                loadGruposTarefas();
             }
 
             // Inicia o carregamento assim que o script sobe
@@ -353,18 +353,17 @@
                     
                     for (let i = 1; i < rows.length; i++) {
                         const row = rows[i];
-                        if (!row || row.length < 2) continue;
                         
-                        const compName = row[0];
-                        const compTopic = row[1];
-                        const subName = row[3];
-                        const subTopic = row[4];
+                        const compName = row.length > 0 ? row[0] : "";
+                        const compTopic = row.length > 1 ? row[1] : "";
+                        const subName = row.length > 3 ? row[3] : "";
+                        const subTopic = row.length > 4 ? row[4] : "";
                         
                         if (compName && compName.trim() !== "") {
-                            companhiasData.push({ name: compName.trim(), topicId: compTopic ? compTopic.trim() : "" });
+                            companhiasData.push({ name: compName.trim(), topicId: compTopic ? String(compTopic).trim() : "" });
                         }
                         if (subName && subName.trim() !== "") {
-                            subcompanhiasData.push({ name: subName.trim(), topicId: subTopic ? subTopic.trim() : "" });
+                            subcompanhiasData.push({ name: subName.trim(), topicId: subTopic ? String(subTopic).trim() : "" });
                         }
                     }
                 } catch (error) {
@@ -997,12 +996,14 @@
                         historyDataArr = [];
                         allTransfersDataArr = [];
 
-                        // Recarrega forçadamente exibindo o texto "Carregando..."
+                        // 1. Recarrega forçadamente os grupos de tarefas primeiro
+                        await loadGruposTarefas(true);
+
+                        // 2. Recarrega forçadamente as listas exibindo o texto "Carregando..."
                         await Promise.all([
                             loadSolicitacoesFromMacro(false),
                             loadHistoryFromMacro(false),
-                            loadAllTransfersFromMacro(false),
-                            loadGruposTarefas(true)
+                            loadAllTransfersFromMacro(false)
                         ]);
                     } catch (error) {
                         console.error("Erro ao recarregar os dados:", error);
