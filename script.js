@@ -1,4 +1,4 @@
-   document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT E WORKER
@@ -991,12 +991,18 @@
                     btnReloadData.classList.add('opacity-50', 'cursor-not-allowed');
 
                     try {
-                        // Recarrega silenciosamente as abas ativas e os grupos de tarefas ignorando o cache
+                        // Força a liberação do cache em memória e quebra o bloqueio de requisição simultânea
+                        ongoingTransfersPromise = null;
+                        requestsDataArr = [];
+                        historyDataArr = [];
+                        allTransfersDataArr = [];
+
+                        // Recarrega forçadamente exibindo o texto "Carregando..."
                         await Promise.all([
-                            loadSolicitacoesFromMacro(true),
-                            loadHistoryFromMacro(true),
-                            loadAllTransfersFromMacro(true),
-                            loadGruposTarefas()
+                            loadSolicitacoesFromMacro(false),
+                            loadHistoryFromMacro(false),
+                            loadAllTransfersFromMacro(false),
+                            loadGruposTarefas(true)
                         ]);
                     } catch (error) {
                         console.error("Erro ao recarregar os dados:", error);
@@ -1293,9 +1299,11 @@
                             const totalPages = Math.ceil(requestsDataArr.length / ITEMS_PER_PAGE) || 1;
                             if (requestsCurrentPage > totalPages) requestsCurrentPage = totalPages;
                             renderRequestsGrid();
+                        } else if (!isSilent) {
+                            renderRequestsGrid();
                         }
                     } else {
-                        if (requestsDataArr.length !== 0) {
+                        if (requestsDataArr.length !== 0 || !isSilent) {
                             requestsDataArr = [];
                             renderRequestsGrid();
                         }
@@ -1345,9 +1353,11 @@
                             const totalPages = Math.ceil(historyDataArr.length / ITEMS_PER_PAGE) || 1;
                             if (historyCurrentPage > totalPages) historyCurrentPage = totalPages;
                             renderHistoryGrid();
+                        } else if (!isSilent) {
+                            renderHistoryGrid();
                         }
                     } else {
-                        if (historyDataArr.length !== 0) {
+                        if (historyDataArr.length !== 0 || !isSilent) {
                             historyDataArr = [];
                             renderHistoryGrid();
                         }
@@ -1376,9 +1386,11 @@
                             const totalPages = Math.ceil(allTransfersDataArr.length / ITEMS_PER_PAGE_ALL) || 1;
                             if (allTransfersCurrentPage > totalPages) allTransfersCurrentPage = totalPages;
                             renderAllTransfersList();
+                        } else if (!isSilent) {
+                            renderAllTransfersList();
                         }
                     } else {
-                        if (allTransfersDataArr.length !== 0) {
+                        if (allTransfersDataArr.length !== 0 || !isSilent) {
                             allTransfersDataArr = [];
                             renderAllTransfersList();
                         }
