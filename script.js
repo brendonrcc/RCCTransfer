@@ -1,4 +1,4 @@
-        document.addEventListener('DOMContentLoaded', function() {
+ document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT E WORKER
@@ -301,6 +301,9 @@
             const decisionError = document.getElementById('decisionError');
             const decisionSubmit = document.getElementById('decisionSubmit');
             const closeDecisionModalButton = document.getElementById('closeDecisionModal');
+
+            const btnReloadData = document.getElementById('btnReloadData');
+            const iconReloadData = document.getElementById('iconReloadData');
 
             let lastStandardPageId = 'page-transferir';
             let pendingDecisionContext = null;
@@ -960,6 +963,34 @@
             historyNextBtn.addEventListener('click', () => { historyCurrentPage++; renderHistoryGrid(); });
             allPrevBtn.addEventListener('click', () => { allTransfersCurrentPage--; renderAllTransfersList(); });
             allNextBtn.addEventListener('click', () => { allTransfersCurrentPage++; renderAllTransfersList(); });
+
+            if (btnReloadData) {
+                btnReloadData.addEventListener('click', async () => {
+                    if (btnReloadData.disabled) return;
+                    
+                    // Inicia animação de carregamento
+                    iconReloadData.classList.add('animate-spin');
+                    btnReloadData.disabled = true;
+                    btnReloadData.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    try {
+                        // Recarrega silenciosamente as abas ativas e os grupos de tarefas
+                        await Promise.all([
+                            loadSolicitacoesFromMacro(true),
+                            loadHistoryFromMacro(true),
+                            loadAllTransfersFromMacro(true),
+                            loadGruposTarefas()
+                        ]);
+                    } catch (error) {
+                        console.error("Erro ao recarregar os dados:", error);
+                    } finally {
+                        // Finaliza animação e devolve usabilidade do botão
+                        iconReloadData.classList.remove('animate-spin');
+                        btnReloadData.disabled = false;
+                        btnReloadData.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+            }
 
             const exportPdfBtn = document.getElementById('exportPdfBtn');
             const exportExcelBtn = document.getElementById('exportExcelBtn');
