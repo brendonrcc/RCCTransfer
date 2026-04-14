@@ -1,12 +1,12 @@
-     document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT (MACRO)
             // ==========================================
-            const MACRO_URL = "https://script.google.com/macros/s/AKfycbxM06Ddm-3IXNKWD2snRHbS9yzW6CQohUE-sI4KypNGdFSJjI_Cv73FyBocSH28UNiElg/exec"; 
+            const MACRO_URL = "https://script.google.com/macros/s/AKfycbzQYz49ZNVJFkIldgCtZ7c9UrhN9bvXql16ppuo5QVloj8kRlk5xgstaItKxmh9LF0g3g/exec"; 
             
             // COLE AQUI A URL GERADA NA PARTE 1 DESSE PROMPT!
-            const MACRO_GRUPOS_URL = "https://script.google.com/macros/s/AKfycbwalagQXlIjk4elFLYUtiKLYl-OD7ycMdaqY5umA9YhNymDd_6l54-Sx9WCyRb2M88Tow/exec"; 
+            const MACRO_GRUPOS_URL = "https://script.google.com/macros/s/AKfycbxUZuOWPi2VFRP0fSrlIJuLOcF4XlSTs9V7d8YuPzqqNz95S98VlnKFFoSyxb-y0ZXxTw/exec"; 
             
             let LOGGED_IN_USER = "Visitante"; 
             const ITEMS_PER_PAGE = 6; 
@@ -924,7 +924,7 @@
                     
                     let htmlStr = `
                         <div style="text-align: center; margin-bottom: 30px;">
-                            <img src="https://i.imgur.com/7NkvjPi.png" style="width: 70px; height: auto; margin-bottom: 15px;" crossorigin="anonymous">
+                            <img src="https://proxy.reinasdev.workers.dev/?url=https://i.imgur.com/7NkvjPi.png" style="width: 70px; height: auto; margin-bottom: 15px;" crossorigin="anonymous">
                             <h1 style="font-size: 22px; font-weight: 900; text-transform: uppercase; margin: 0; color: #132a46;">Polícia Militar Revolução Contra o Crime</h1>
                             <h2 style="font-size: 16px; font-weight: 700; color: #83909e; margin: 5px 0;">Administradores do Fórum</h2>
                             <h3 style="font-size: 14px; font-weight: 600; color: #f68b28; margin: 0;">Transferências de Conta</h3>
@@ -965,7 +965,7 @@
                         margin:       10,
                         filename:     'Transferencias_RCC.pdf',
                         image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  { scale: 2, useCORS: true },
+                        html2canvas:  { scale: 2, proxy: 'https://proxy.reinasdev.workers.dev/?url=' },
                         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
                         pagebreak:    { mode: ['css', 'legacy'] }
                     };
