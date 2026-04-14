@@ -3,7 +3,7 @@
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT (MACRO)
             // ==========================================
-            const MACRO_URL = "https://script.google.com/macros/s/AKfycbwkWO0Cb5d6K5yOp9ehDA5N8PAkrXnLkUmXQCZEe321Y6SXSQQWpJd6UDLxDHreqNaQfA/exec"; 
+            const MACRO_URL = "https://script.google.com/macros/s/AKfycbwkiVTR4HUA-w2TdNHP67yrQXVQy8LE17PufLYlsChcVdfyo7OgmAzA_hxH3P9cYvWv_w/exec"; 
             
             // COLE AQUI A URL GERADA NA PARTE 1 DESSE PROMPT!
             const MACRO_GRUPOS_URL = "https://script.google.com/macros/s/AKfycbxUZuOWPi2VFRP0fSrlIJuLOcF4XlSTs9V7d8YuPzqqNz95S98VlnKFFoSyxb-y0ZXxTw/exec"; 
