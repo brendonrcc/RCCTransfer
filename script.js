@@ -1,4 +1,4 @@
-    document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT (MACRO)
@@ -1445,7 +1445,13 @@
                 if (rccButton) {
                     event.stopPropagation();
                     const historyCard = rccButton.closest('.history-card');
-                    setRccActionState(historyCard, historyCard.dataset.rccStatus !== 'done');
+                    
+                    // Marca visualmente que já foi feito algo
+                    setRccActionState(historyCard, true);
+                    
+                    // Abre a aba nova da página especificada
+                    window.open("https://system.policercc.com.br/requerimentos/tags", "_blank");
+                    
                     return;
                 }
             });
@@ -1541,13 +1547,15 @@
                 const novoNick = document.getElementById('novoNickInput').value.trim();
                 const comprovacoes = document.getElementById('comprovacoesInput').value.trim() || 'Nenhuma (opcional)';
                 
+                // NOVO CÓDIGO DA LÓGICA DE POSTAGEM DE TERCEIRO:
+                const solicitanteDestino = postagemTerceiroCheck.checked ? thirdPartyNicknameInput.value.trim() : LOGGED_IN_USER;
                 const oficialDestino = postagemTerceiroCheck.checked ? LOGGED_IN_USER : oficialHidden.value;
                 const dataHoraAtual = formatBrasiliaDate(new Date());
 
                 const requestPayload = {
                     action: 'create',
                     codigo: codigoAleatorio,
-                    solicitante: LOGGED_IN_USER,
+                    solicitante: solicitanteDestino,
                     dataHora: dataHoraAtual,
                     motivo: motivoTexto,
                     novoNick: novoNick,
@@ -1577,7 +1585,7 @@
                 historyDataArr.unshift({
                     data: {
                         requestId: codigoAleatorio,
-                        requester: LOGGED_IN_USER,
+                        requester: solicitanteDestino,
                         date: dataHoraAtual,
                         reason: motivoTexto,
                         newNick: novoNick,
