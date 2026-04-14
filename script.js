@@ -1,4 +1,4 @@
-    document.addEventListener('DOMContentLoaded', function() {
+   document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
             // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT E WORKER
